@@ -21,10 +21,15 @@ spring:
           filters:
 #            - AddRequestHeader=first-request, first-request-header2
 #            - AddResponseHeader=first-request, first-response-header2
-            - CustomFilter
+            - name: CustomFilter
+            - name: LoggingFilter
+              args:
+                baseMessage: Logging Filter Hello
+                preLogger: true
+                postLogger: true
       default-filters:
         - name: GlobalFilter
-        - args:
+          args:
             baseMessage: Spring Cloud Gateway Global Filter
             preLogger: true
             postLogger: true

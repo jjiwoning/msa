@@ -1,7 +1,9 @@
 package com.example.apigatewayservice.filter;
 
 import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.OrderedGatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -15,34 +17,31 @@ import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
-public class GlobalFilter extends AbstractGatewayFilterFactory<GlobalFilter.Config> {
+public class LoggingFilter extends AbstractGatewayFilterFactory<LoggingFilter.Config> {
 
-	public GlobalFilter() {
+	public LoggingFilter() {
 		super(Config.class);
 	}
 
 	@Override
 	public GatewayFilter apply(Config config) {
-		// Global pre filter
-		return (exchange, chain) -> {
+		return new OrderedGatewayFilter(((exchange, chain) -> {
 			ServerHttpRequest request = exchange.getRequest();
 			ServerHttpResponse response = exchange.getResponse();
 
-			log.info("Global Filter Base Message = {}", config.getBaseMessage());
+			log.info("Logging Filter Base Message = {}", config.getBaseMessage());
 
 			if (config.isPreLogger()) {
-				log.info("Global Filter Start: Request ID = {}", request.getId());
+				log.info("Logging Pre Filter: Request ID = {}", request.getId());
 			}
 
-			// Global post filter
-			return chain.filter(exchange).then(
-				Mono.fromRunnable(() -> {
-						if (config.isPostLogger()) {
-							log.info("Global Filter End: Response Code = {}", response.getStatusCode());
-						}
+			return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+					if (config.isPostLogger()) {
+						log.info("Logging Post Filter: Response Code = {}", response.getStatusCode());
 					}
-				));
-		};
+				}
+			));
+		}), Ordered.HIGHEST_PRECEDENCE);
 	}
 
 	@Getter
